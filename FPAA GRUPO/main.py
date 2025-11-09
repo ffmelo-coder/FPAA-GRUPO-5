@@ -1,55 +1,88 @@
 from pathfinder import PathFinder
 
 
+def validar_labirinto(labirinto):
+    if not labirinto:
+        raise ValueError("Labirinto vazio")
+
+    largura = len(labirinto[0])
+    for linha in labirinto:
+        if len(linha) != largura:
+            raise ValueError("Todas as linhas devem ter o mesmo tamanho")
+
+    return True
+
+
 def ler_labirinto():
     print("Digite o labirinto (matriz 2D):")
-    print("Use: 0 (livre), 1 (obstaculo), 2 (inicio S), 3 (fim E)")
+    print("Use: 0 (livre), 1 (obstaculo), S (inicio), E (fim)")
     print("Digite cada linha separada por espacos, linha vazia para terminar:")
 
     labirinto = []
     while True:
-        linha = input()
-        if not linha.strip():
-            break
+        try:
+            linha = input()
+            if not linha.strip():
+                break
 
-        valores = linha.split()
-        linha_labirinto = []
-        for v in valores:
-            if v.upper() == "S":
-                linha_labirinto.append(2)
-            elif v.upper() == "E":
-                linha_labirinto.append(3)
-            else:
-                linha_labirinto.append(int(v))
+            valores = linha.split()
+            linha_labirinto = []
+            for v in valores:
+                if v.upper() == "S":
+                    linha_labirinto.append(2)
+                elif v.upper() == "E":
+                    linha_labirinto.append(3)
+                else:
+                    try:
+                        valor = int(v)
+                        if valor not in [0, 1, 2, 3]:
+                            raise ValueError(f"Valor invalido: {v}")
+                        linha_labirinto.append(valor)
+                    except ValueError:
+                        raise ValueError(f"Valor invalido: {v}")
 
-        labirinto.append(linha_labirinto)
+            labirinto.append(linha_labirinto)
+        except ValueError as e:
+            print(f"Erro na entrada: {e}")
+            return None
 
     return labirinto
 
 
 def main():
-    labirinto = ler_labirinto()
+    try:
+        labirinto = ler_labirinto()
 
-    if not labirinto:
-        print("Labirinto vazio!")
-        return
+        if labirinto is None:
+            return
 
-    pathfinder = PathFinder(labirinto)
+        validar_labirinto(labirinto)
 
-    if not pathfinder.encontrar_posicoes():
-        print("Sem solucao")
-        return
+        print("\nDeseja permitir movimentacao diagonal? (s/n): ", end="")
+        diagonal_input = input().strip().lower()
+        diagonal = diagonal_input == "s"
 
-    caminho = pathfinder.a_estrela()
+        pathfinder = PathFinder(labirinto, diagonal=diagonal)
 
-    if caminho is None:
-        print("Sem solucao")
-    else:
-        print("\nMenor caminho (em coordenadas):")
-        print(caminho)
+        if not pathfinder.encontrar_posicoes():
+            print("Sem solucao")
+            return
 
-        print("\nLabirinto com o caminho destacado:")
-        pathfinder.mostrar_labirinto_com_caminho(caminho)
+        caminho = pathfinder.a_estrela()
+
+        if caminho is None:
+            print("Sem solucao")
+        else:
+            print("\nMenor caminho (em coordenadas):")
+            print(caminho)
+
+            print("\nLabirinto com o caminho destacado:")
+            pathfinder.mostrar_labirinto_com_caminho(caminho)
+
+    except ValueError as e:
+        print(f"Erro: {e}")
+    except Exception as e:
+        print(f"Erro inesperado: {e}")
 
 
 if __name__ == "__main__":

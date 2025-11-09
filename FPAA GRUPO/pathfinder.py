@@ -1,40 +1,63 @@
 import heapq
+import math
 from typing import List, Tuple, Optional
 
 
 class PathFinder:
-    def __init__(self, labirinto: List[List[int]]):
+    def __init__(self, labirinto: List[List[int]], diagonal: bool = False):
         self.labirinto = labirinto
         self.linhas = len(labirinto)
         self.colunas = len(labirinto[0]) if labirinto else 0
         self.inicio = None
         self.fim = None
+        self.diagonal = diagonal
 
     def encontrar_posicoes(self) -> bool:
+        count_inicio = 0
+        count_fim = 0
+
         for i in range(self.linhas):
             for j in range(self.colunas):
                 if self.labirinto[i][j] == 2:
                     self.inicio = (i, j)
+                    count_inicio += 1
                 elif self.labirinto[i][j] == 3:
                     self.fim = (i, j)
+                    count_fim += 1
+
+        if count_inicio > 1 or count_fim > 1:
+            raise ValueError("Labirinto deve ter apenas um ponto S e um ponto E")
 
         return self.inicio is not None and self.fim is not None
 
-    def heuristica(self, atual: Tuple[int, int]) -> int:
+    def heuristica(self, atual: Tuple[int, int]) -> float:
         if self.fim is None:
             return 0
-        return abs(atual[0] - self.fim[0]) + abs(atual[1] - self.fim[1])
+        dx = abs(atual[0] - self.fim[0])
+        dy = abs(atual[1] - self.fim[1])
 
-    def vizinhos_validos(self, pos: Tuple[int, int]) -> List[Tuple[int, int]]:
+        if self.diagonal:
+            return math.sqrt(dx * dx + dy * dy)
+        return dx + dy
+
+    def vizinhos_validos(
+        self, pos: Tuple[int, int]
+    ) -> List[Tuple[Tuple[int, int], float]]:
         x, y = pos
         vizinhos = []
+
         direcoes = [(0, 1), (1, 0), (0, -1), (-1, 0)]
+
+        if self.diagonal:
+            direcoes_diagonais = [(1, 1), (1, -1), (-1, 1), (-1, -1)]
+            direcoes.extend(direcoes_diagonais)
 
         for dx, dy in direcoes:
             nx, ny = x + dx, y + dy
             if 0 <= nx < self.linhas and 0 <= ny < self.colunas:
                 if self.labirinto[nx][ny] != 1:
-                    vizinhos.append((nx, ny))
+                    custo = math.sqrt(2) if abs(dx) + abs(dy) == 2 else 1
+                    vizinhos.append(((nx, ny), custo))
 
         return vizinhos
 
@@ -47,15 +70,24 @@ class PathFinder:
 
         veio_de = {}
         custo_g = {self.inicio: 0}
+        visitados = set()
 
         while fila_prioridade:
             _, atual = heapq.heappop(fila_prioridade)
 
+            if atual in visitados:
+                continue
+
+            visitados.add(atual)
+
             if atual == self.fim:
                 return self.reconstruir_caminho(veio_de)
 
-            for vizinho in self.vizinhos_validos(atual):
-                novo_custo = custo_g[atual] + 1
+            for vizinho, custo_movimento in self.vizinhos_validos(atual):
+                if vizinho in visitados:
+                    continue
+
+                novo_custo = custo_g[atual] + custo_movimento
 
                 if vizinho not in custo_g or novo_custo < custo_g[vizinho]:
                     custo_g[vizinho] = novo_custo
