@@ -55,7 +55,6 @@ O programa retorna:
 FPAA GRUPO/
 ├── main.py          # Programa principal com entrada de dados
 ├── pathfinder.py    # Implementação do algoritmo A*
-└── README.md        # Este arquivo
 ```
 
 ## Algoritmo A\*
