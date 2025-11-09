@@ -1,6 +1,10 @@
 import heapq
 import math
 from typing import List, Tuple, Optional
+import matplotlib.pyplot as plt
+import matplotlib.animation as animation
+from matplotlib.colors import ListedColormap
+import numpy as np
 
 
 class PathFinder:
@@ -61,7 +65,7 @@ class PathFinder:
 
         return vizinhos
 
-    def a_estrela(self) -> Optional[List[Tuple[int, int]]]:
+    def a_estrela(self, visualizar=False) -> Optional[List[Tuple[int, int]]]:
         if not self.encontrar_posicoes():
             return None
 
@@ -71,6 +75,7 @@ class PathFinder:
         veio_de = {}
         custo_g = {self.inicio: 0}
         visitados = set()
+        historico_exploracao = [] if visualizar else None
 
         while fila_prioridade:
             _, atual = heapq.heappop(fila_prioridade)
@@ -80,8 +85,14 @@ class PathFinder:
 
             visitados.add(atual)
 
+            if visualizar:
+                historico_exploracao.append((atual, set(visitados.copy())))
+
             if atual == self.fim:
-                return self.reconstruir_caminho(veio_de)
+                caminho = self.reconstruir_caminho(veio_de)
+                if visualizar:
+                    self.visualizar_busca(historico_exploracao, caminho, True)
+                return caminho
 
             for vizinho, custo_movimento in self.vizinhos_validos(atual):
                 if vizinho in visitados:
@@ -94,6 +105,9 @@ class PathFinder:
                     f = novo_custo + self.heuristica(vizinho)
                     heapq.heappush(fila_prioridade, (f, vizinho))
                     veio_de[vizinho] = atual
+
+        if visualizar and historico_exploracao:
+            self.visualizar_busca(historico_exploracao, None, False)
 
         return None
 
@@ -128,3 +142,51 @@ class PathFinder:
                 else:
                     linha_str += str(celula) + " "
             print(linha_str)
+
+    def visualizar_busca(self, historico_exploracao, caminho_final, tem_solucao):
+        fig, ax = plt.subplots(figsize=(10, 10))
+        cmap = ListedColormap(["white", "black", "green", "red", "lightblue", "yellow"])
+
+        def atualizar_frame(frame):
+            ax.clear()
+            matriz_visual = np.array(self.labirinto, dtype=float)
+
+            if frame < len(historico_exploracao):
+                _, visitados = historico_exploracao[frame]
+                for pos in visitados:
+                    if matriz_visual[pos[0]][pos[1]] == 0:
+                        matriz_visual[pos[0]][pos[1]] = 4
+            else:
+                _, visitados = historico_exploracao[-1]
+                for pos in visitados:
+                    if matriz_visual[pos[0]][pos[1]] == 0:
+                        matriz_visual[pos[0]][pos[1]] = 4
+
+                if tem_solucao and caminho_final:
+                    for pos in caminho_final:
+                        if matriz_visual[pos[0]][pos[1]] not in [2, 3]:
+                            matriz_visual[pos[0]][pos[1]] = 5
+
+            ax.imshow(matriz_visual, cmap=cmap, vmin=0, vmax=5)
+
+            if frame >= len(historico_exploracao) and not tem_solucao:
+                titulo = f"A* - SEM SOLUCAO - Frame {frame + 1}/{len(historico_exploracao) + 10}"
+            else:
+                titulo = f"A* - Frame {frame + 1}/{len(historico_exploracao) + 10}"
+
+            ax.set_title(
+                titulo, fontsize=14, fontweight="bold" if not tem_solucao else "normal"
+            )
+            ax.grid(True, which="both", color="gray", linewidth=0.5)
+            ax.set_xticks(np.arange(-0.5, self.colunas, 1))
+            ax.set_yticks(np.arange(-0.5, self.linhas, 1))
+            ax.set_xticklabels([])
+            ax.set_yticklabels([])
+
+        total_frames = len(historico_exploracao) + 10
+        anim = animation.FuncAnimation(
+            fig, atualizar_frame, frames=total_frames, interval=20, repeat=True
+        )
+
+        plt.tight_layout()
+        plt.show()
