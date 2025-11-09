@@ -42,6 +42,14 @@ S 0 1 0 0
 1 0 0 E 1
 ```
 
+Após inserir o labirinto, o programa perguntará:
+
+```
+Deseja permitir movimentacao diagonal? (s/n):
+```
+
+Digite `s` para permitir movimentação diagonal ou `n` para apenas 4 direções.
+
 ### Saída
 
 O programa retorna:
@@ -65,13 +73,28 @@ O algoritmo A\* combina:
 - **h(n)**: Heurística (estimativa) da distância do nó atual até o destino
 - **f(n) = g(n) + h(n)**: Função de avaliação total
 
-### Heurística de Manhattan
+### Heurística de Manhattan (4 direções)
 
 ```
 h(n) = |x_atual - x_final| + |y_atual - y_final|
 ```
 
 Esta heurística estima a distância entre dois pontos somando as diferenças absolutas de suas coordenadas.
+
+### Heurística Euclidiana (movimentação diagonal)
+
+Quando a movimentação diagonal está habilitada, o algoritmo usa a distância euclidiana:
+
+```
+h(n) = √((x_atual - x_final)² + (y_atual - y_final)²)
+```
+
+Esta heurística fornece uma estimativa mais precisa quando movimentos diagonais são permitidos.
+
+### Custos de Movimento
+
+- Movimentação horizontal/vertical: custo = 1
+- Movimentação diagonal: custo = √2 ≈ 1.414
 
 ## Primeira Entrega
 
@@ -80,20 +103,20 @@ Esta primeira versão inclui:
 - ✅ Leitura do labirinto via entrada do usuário
 - ✅ Identificação automática dos pontos S e E
 - ✅ Implementação da heurística de Manhattan
+- ✅ Implementação da heurística Euclidiana para movimento diagonal
 - ✅ Algoritmo A\* básico funcional
 - ✅ Movimentação nas 4 direções (cima, baixo, esquerda, direita)
+- ✅ Movimentação diagonal opcional (8 direções)
 - ✅ Validação se S e E existem no labirinto
+- ✅ Validação de unicidade de S e E
+- ✅ Validação de formato do labirinto (matriz retangular)
+- ✅ Tratamento de erros de entrada inválida
 - ✅ Exibição do caminho encontrado
 - ✅ Visualização do labirinto com caminho destacado
-
-### Limitações conhecidas (para segunda entrega):
-
-- Movimentação diagonal não implementada
-- Falta tratamento robusto de erros
-- Código pode ser otimizado
-- Testes automáticos não implementados
+- ✅ Sistema de custos diferenciados (1 para reto, √2 para diagonal)
 
 ## Autores
 
 Filipe Faria Melo
+
 Augusto Fuscaldi Cerezo
