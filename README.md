@@ -96,4 +96,5 @@ Esta primeira versão inclui:
 ## Autores
 
 Filipe Faria Melo
+
 Augusto Fuscaldi Cerezo
