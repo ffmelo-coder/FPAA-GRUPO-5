@@ -49,9 +49,9 @@ def gerar_labirinto_aleatorio(linhas, colunas, densidade_obstaculos=0.3, numero_
     if linhas < 2 or colunas < 2:
         raise ValueError("Labirinto deve ter no minimo 2x2")
     total_setores = numero_fins + 1
-    if linhas * colunas < 4 * total_setores:
+    if numero_fins > 1 and linhas * colunas < 3 * total_setores:
         raise ValueError(
-            "Area do labirinto insuficiente para o numero de fins (X * Y >= 4 * (N + 1))"
+            "Area do labirinto insuficiente para o numero de fins (X * Y >= 3 * (N + 1))"
         )
     if densidade_obstaculos > 0.8:
         densidade_obstaculos = 0.8
