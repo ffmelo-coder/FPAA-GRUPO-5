@@ -18,7 +18,30 @@ def animate_history(history, save_gif=False, out_path=None, interval=200):
 
     from matplotlib.colors import ListedColormap
 
-    cores = ["white", "black", "red", "blue", "orange", "yellow", "green"]
+    cores_base = ["white", "black", "red", "blue", "orange", "yellow", "green"]
+    cores_extras = [
+        (0.5, 0, 0.5),
+        (0, 0.5, 0.5),
+        (1, 0.75, 0.8),
+        (0.6, 0.4, 0.2),
+        (0.5, 0.5, 0.5),
+        (0.4, 0, 0.8),
+        (0.8, 0.4, 0),
+        (0, 0.6, 0.3),
+        (0.7, 0.3, 0.7),
+        (0.3, 0.7, 0.7),
+        (0.9, 0.6, 0.1),
+        (0.2, 0.8, 0.2),
+        (0.8, 0.2, 0.2),
+        (0.2, 0.2, 0.8),
+        (0.6, 0.6, 0),
+        (0, 0.6, 0.6),
+        (0.6, 0, 0.6),
+        (0.8, 0.8, 0.4),
+        (0.4, 0.8, 0.8),
+        (0.8, 0.4, 0.8),
+    ]
+    cores = cores_base + cores_extras
     cmap = ListedColormap(cores)
 
     img = ax.imshow(arr0, cmap=cmap, vmin=0, vmax=6, animated=True)
