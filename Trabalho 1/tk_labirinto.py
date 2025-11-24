@@ -500,6 +500,7 @@ class TkLabirintoApp:
                     self.grid[i][j] = 0
         self.inicio = None
         self.fins = []
+        self.path_cells.clear()
         self.desenhar_grid()
 
     def executar_algoritmo(self):
