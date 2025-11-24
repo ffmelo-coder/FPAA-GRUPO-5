@@ -1,5 +1,6 @@
 import heapq
 import math
+import time
 from typing import List, Tuple, Optional, Dict
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
@@ -18,6 +19,8 @@ class PathFinder:
         self.inicio = None
         self.fim = None
         self.diagonal = diagonal
+        # tempo (ms) gasto pelo último run do algoritmo (exclui overhead de visualização)
+        self.last_elapsed_ms: float = 0.0
 
     # Encontra as posições de início (S) e fim (E) no labirinto
     def encontrar_posicoes(self) -> bool:
@@ -63,9 +66,13 @@ class PathFinder:
         return vizinhos
 
     # Algoritmo A* para encontrar o caminho mais curto
-    def a_estrela(self, visualizar=False, salvar_gif=False) -> Optional[List[Tuple[int, int]]]:
+    def a_estrela(
+        self, visualizar=False, salvar_gif=False
+    ) -> Optional[List[Tuple[int, int]]]:
         if not self.encontrar_posicoes():
             return None
+        start_time = time.perf_counter()
+        viz_time = 0.0
         fila_prioridade = []
         heapq.heappush(fila_prioridade, (0, self.inicio))
         veio_de = {}
@@ -78,6 +85,7 @@ class PathFinder:
                 continue
             visitados.add(atual)
             if visualizar:
+                t_v0 = time.perf_counter()
                 custos_visitados = {pos: custo_g[pos] for pos in visitados}
                 na_fila = [pos for _, pos in fila_prioridade]
                 posicoes_fila = {pos: idx + 1 for idx, pos in enumerate(na_fila)}
@@ -90,10 +98,15 @@ class PathFinder:
                         posicoes_fila,
                     )
                 )
+                viz_time += time.perf_counter() - t_v0
             if atual == self.fim:
                 caminho = self.reconstruir_caminho(veio_de)
+                total = (time.perf_counter() - start_time) - viz_time
+                self.last_elapsed_ms = total * 1000.0
                 if visualizar:
-                    self.visualizar_busca(historico_exploracao, caminho, True, salvar_gif)
+                    self.visualizar_busca(
+                        historico_exploracao, caminho, True, salvar_gif
+                    )
                 return caminho
             for vizinho, custo_movimento in self.vizinhos_validos(atual):
                 if vizinho in visitados:
@@ -104,6 +117,8 @@ class PathFinder:
                     f = novo_custo + self.heuristica(vizinho)
                     heapq.heappush(fila_prioridade, (f, vizinho))
                     veio_de[vizinho] = atual
+        total = (time.perf_counter() - start_time) - viz_time
+        self.last_elapsed_ms = total * 1000.0
         if visualizar and historico_exploracao:
             self.visualizar_busca(historico_exploracao, None, False, salvar_gif)
         return None
@@ -139,7 +154,12 @@ class PathFinder:
             print(linha_str)
 
     # Cria animação visual da busca A*
-    def visualizar_busca(self, historico_exploracao, caminho_final, tem_solucao, salvar_gif=False):
+    def visualizar_busca(
+        self, historico_exploracao, caminho_final, tem_solucao, salvar_gif=False
+    ):
+
+        from matplotlib.widgets import Button
+        import datetime
 
         self.ultima_animacao = None
 
@@ -373,26 +393,47 @@ class PathFinder:
                 blit=False,
                 repeat=True,
             )
-        
+
         self.ultima_animacao = anim
-        
+
         fig.subplots_adjust(right=0.82)
         try:
             fig.tight_layout(rect=[0, 0, 1, 0.90])
         except Exception:
             plt.tight_layout()
-        
+
+        # Adiciona botão Salvar GIF
+        ax_button = fig.add_axes([0.83, 0.05, 0.13, 0.06])
+        btn = Button(ax_button, "Salvar GIF", color="#FFD700", hovercolor="#FFEC8B")
+
+        def on_save_gif(event):
+            if self.ultima_animacao is None:
+                print("Nenhuma animacao disponivel para salvar.")
+                return
+            print("Salvando animacao como GIF (isso pode demorar)...")
+            try:
+                now = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+                filename = f"astar_animation_{now}.gif"
+                self.ultima_animacao.save(filename, writer="pillow", fps=12, dpi=80)
+                print(f"GIF salvo como '{filename}'")
+                # Aviso visual no Matplotlib
+                ax.text(
+                    0.5,
+                    1.05,
+                    "GIF SALVO",
+                    transform=ax.transAxes,
+                    fontsize=16,
+                    color="green",
+                    ha="center",
+                    va="bottom",
+                    fontweight="bold",
+                    zorder=10,
+                )
+                fig.canvas.draw_idle()
+            except Exception as e:
+                print(f"Erro ao salvar GIF: {e}")
+                print("Certifique-se de ter o Pillow instalado: pip install pillow")
+
+        btn.on_clicked(on_save_gif)
+
         plt.show()
-    
-    def salvar_ultima_animacao(self):
-        if self.ultima_animacao is None:
-            print("Nenhuma animacao disponivel para salvar.")
-            return
-        
-        print("Salvando animacao como GIF (isso pode demorar)...")
-        try:
-            self.ultima_animacao.save('astar_animation.gif', writer='pillow', fps=12, dpi=80)
-            print("GIF salvo como 'astar_animation.gif'")
-        except Exception as e:
-            print(f"Erro ao salvar GIF: {e}")
-            print("Certifique-se de ter o Pillow instalado: pip install pillow")

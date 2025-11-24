@@ -1,5 +1,6 @@
 from collections import deque
 from typing import List, Tuple, Dict
+import time
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 from matplotlib.colors import ListedColormap
@@ -16,6 +17,7 @@ class FloodFill:
         self.colunas = len(labirinto[0]) if labirinto else 0
         self.inicio = None
         self.fins: List[Tuple[int, int]] = []
+        self.last_elapsed_ms: float = 0.0
 
     # Encontra as posições de início (S) e fim (E) no labirinto
     def encontrar_posicoes(self) -> bool:
@@ -35,6 +37,8 @@ class FloodFill:
     ) -> Dict[Tuple[int, int], List[Tuple[int, int]]]:
         if not self.encontrar_posicoes():
             return {}
+        start_time = time.perf_counter()
+        viz_time = 0.0
 
         fila = deque([self.inicio])
         visitados = {self.inicio}
@@ -51,15 +55,19 @@ class FloodFill:
             atual = fila.popleft()
 
             if visualizar:
+                t_v0 = time.perf_counter()
                 custos_visitados = {pos: dist[pos] for pos in visitados}
                 historico_exploracao.append(
                     (atual, set(visitados.copy()), custos_visitados)
                 )
+                viz_time += time.perf_counter() - t_v0
 
             if atual in self.fins and atual not in caminhos_encontrados:
                 caminho = self.reconstruir_caminho(veio_de, atual)
                 caminhos_encontrados[atual] = caminho
                 if todos_encontrados and len(caminhos_encontrados) == len(fins_set):
+                    total = (time.perf_counter() - start_time) - viz_time
+                    self.last_elapsed_ms = total * 1000.0
                     if visualizar:
                         caminhos_lista = list(caminhos_encontrados.values())
                         self.visualizar_busca(
@@ -81,12 +89,16 @@ class FloodFill:
                     veio_de[(nx, ny)] = atual
                     dist[(nx, ny)] = dist[atual] + 1
 
+        total = (time.perf_counter() - start_time) - viz_time
+        self.last_elapsed_ms = total * 1000.0
         if visualizar and historico_exploracao:
             caminhos_lista = (
                 list(caminhos_encontrados.values()) if caminhos_encontrados else None
             )
             tem_solucao = bool(caminhos_encontrados)
-            self.visualizar_busca(historico_exploracao, caminhos_lista, tem_solucao, salvar_gif)
+            self.visualizar_busca(
+                historico_exploracao, caminhos_lista, tem_solucao, salvar_gif
+            )
         return caminhos_encontrados
 
     # Reconstrói o caminho a partir do dicionário de predecessores
@@ -125,7 +137,12 @@ class FloodFill:
             print(linha_str)
 
     # Cria animação visual da busca Flood Fill
-    def visualizar_busca(self, historico_exploracao, caminho_final, tem_solucao, salvar_gif=False):
+    def visualizar_busca(
+        self, historico_exploracao, caminho_final, tem_solucao, salvar_gif=False
+    ):
+
+        from matplotlib.widgets import Button
+        import datetime
 
         self.ultima_animacao = None
 
@@ -363,7 +380,7 @@ class FloodFill:
                 blit=False,
                 repeat=True,
             )
-        
+
         self.ultima_animacao = anim
 
         fig.subplots_adjust(right=0.82)
@@ -371,18 +388,39 @@ class FloodFill:
             fig.tight_layout(rect=[0, 0, 1, 0.90])
         except Exception:
             plt.tight_layout()
-        
+
+        # Adiciona botão Salvar GIF
+        ax_button = fig.add_axes([0.83, 0.05, 0.13, 0.06])
+        btn = Button(ax_button, "Salvar GIF", color="#FFD700", hovercolor="#FFEC8B")
+
+        def on_save_gif(event):
+            if self.ultima_animacao is None:
+                print("Nenhuma animacao disponivel para salvar.")
+                return
+            print("Salvando animacao como GIF (isso pode demorar)...")
+            try:
+                now = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+                filename = f"floodfill_animation_{now}.gif"
+                self.ultima_animacao.save(filename, writer="pillow", fps=12, dpi=80)
+                print(f"GIF salvo como '{filename}'")
+                # Aviso visual no Matplotlib
+                ax.text(
+                    0.5,
+                    1.05,
+                    "GIF SALVO",
+                    transform=ax.transAxes,
+                    fontsize=16,
+                    color="green",
+                    ha="center",
+                    va="bottom",
+                    fontweight="bold",
+                    zorder=10,
+                )
+                fig.canvas.draw_idle()
+            except Exception as e:
+                print(f"Erro ao salvar GIF: {e}")
+                print("Certifique-se de ter o Pillow instalado: pip install pillow")
+
+        btn.on_clicked(on_save_gif)
+
         plt.show()
-    
-    def salvar_ultima_animacao(self):
-        if self.ultima_animacao is None:
-            print("Nenhuma animacao disponivel para salvar.")
-            return
-        
-        print("Salvando animacao como GIF (isso pode demorar)...")
-        try:
-            self.ultima_animacao.save('floodfill_animation.gif', writer='pillow', fps=12, dpi=80)
-            print("GIF salvo como 'floodfill_animation.gif'")
-        except Exception as e:
-            print(f"Erro ao salvar GIF: {e}")
-            print("Certifique-se de ter o Pillow instalado: pip install pillow")
