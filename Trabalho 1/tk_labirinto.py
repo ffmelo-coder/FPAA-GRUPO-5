@@ -324,6 +324,9 @@ class TkLabirintoApp:
             elif self.grid[i][j] == 1:
                 self.grid[i][j] = 0
                 self.last_draw_state = 0
+            elif self.grid[i][j] == 3:
+                self.grid[i][j] = 0
+                self.last_draw_state = 0 
             else:
                 self.last_draw_state = None
 
